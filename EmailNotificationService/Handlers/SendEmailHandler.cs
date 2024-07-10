@@ -3,6 +3,7 @@ using EmailNotificationService.Domain.Models;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Threading.Tasks;
 
 namespace EmailNotificationService.Handlers
 {
@@ -24,14 +25,14 @@ namespace EmailNotificationService.Handlers
         /// <param name="myQueueItem"></param>
         /// <param name="log"></param>
         [FunctionName("SendEmailFunction")]
-        public void Run([ServiceBusTrigger("mail-queue", IsSessionsEnabled = true, Connection = "ServiceBusConnection")] SendEmailEvent sendEmailEvent)
+        public async Task RunAsync([ServiceBusTrigger("mail-queue", IsSessionsEnabled = true, Connection = "ServiceBusConnection")] SendEmailEvent sendEmailEvent)
         {
             _logger.LogInformation($"Received sendEmailEvent#{sendEmailEvent.EventId} to user {sendEmailEvent.To} with subject: {sendEmailEvent.Subject}");
 
             try
             {
                 Notification notification = new Notification(sendEmailEvent);
-                _notificationService.Send(notification);
+                await _notificationService.SendAsync(notification);
             }
             catch (Exception ex)
             {

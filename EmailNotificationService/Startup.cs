@@ -22,7 +22,8 @@ namespace EmailNotificationService
             builder.Services.AddSingleton(configuration)
                 .AddScoped<ISendEmailHandler, SendEmailHandler>()
                 .AddTransient<INotificationService, NotificationService>()
-                .AddTransient<IEmailSender, EmailSender>();
+                .AddTransient<IEmailSender, EmailSender>()
+                .AddTransient<IEmailSentRepository, EmailSentRepository>();
 
             // Add logging
             builder.Services.AddLogging();

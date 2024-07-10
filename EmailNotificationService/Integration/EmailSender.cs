@@ -1,5 +1,6 @@
 ﻿using EmailNotificationService.Domain.Interfaces;
 using System;
+using System.Threading.Tasks;
 
 namespace EmailNotificationService.Integration
 {
@@ -7,7 +8,7 @@ namespace EmailNotificationService.Integration
     {
         public EmailSender() { }
 
-        public void Send(string email, string message)
+        public async Task SendAsync(string email, string message)
         {
             Console.WriteLine(" to user: " + email + "\nMessage:\"" + message + "\"");
         }

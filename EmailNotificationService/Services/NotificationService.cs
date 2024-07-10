@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace EmailNotificationService.Services
 {
@@ -11,27 +12,40 @@ namespace EmailNotificationService.Services
     {
         private readonly ILogger<NotificationService> _logger;
         private readonly IEmailSender _emailSender;
+        private readonly IEmailSentRepository _emailSentRepository;
         private readonly Dictionary<string, RateLimitConfiguration> _rateLimitDictionary;
 
-        public NotificationService(ILogger<NotificationService> logger, IEmailSender emailSender, IConfiguration configuration)
+        public NotificationService(ILogger<NotificationService> logger, IEmailSender emailSender, IEmailSentRepository emailSentRepository, IConfiguration configuration)
         {
             this._logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this._emailSender = emailSender ?? throw new ArgumentNullException(nameof(emailSender));
+            this._emailSentRepository = emailSentRepository ?? throw new ArgumentNullException(nameof(emailSentRepository));
 
-            var infoList = new List<RateLimitConfiguration>();
-            configuration.GetSection("RateLimitTypeList").Bind(infoList);
+            var rateLimitConfigurationList = new List<RateLimitConfiguration>();
+            configuration.GetSection("RateLimitTypeList").Bind(rateLimitConfigurationList);
             _rateLimitDictionary = new Dictionary<string, RateLimitConfiguration>();
-            foreach (var info in infoList)
+            foreach (var item in rateLimitConfigurationList)
             {
-                _rateLimitDictionary[info.Type] = info;
+                _rateLimitDictionary[item.Type] = item;
             }
 
         }
 
-        // TODO: TASK: IMPLEMENT this
-        public void Send(Notification notification)
+        public async Task SendAsync(Notification notification)
         {
-            throw new Exception("not implemented - fix this");
+            // 1st: Variable checking: check every interesting info. Ex: Throw exception if To is null, if Subject null, Content null, etc.
+
+            // 2nd: Access dictionary and check if type is supported
+
+            // 3rd: Access an repository to return how many notifications from that type an user has received
+            // If type HasRateLimit false, skip this
+
+            // 4th: Verify based on dictionary rule if a new notification can be sent. 
+            // If don't, send message back to the queue.
+
+            // 5th: If all set, call emailSender and send e-mail.
+
+            // 6th: Register emailSent in emailSentRepository
         }
 
     }

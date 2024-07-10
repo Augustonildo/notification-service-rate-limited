@@ -4,6 +4,6 @@ namespace EmailNotificationService.Domain.Interfaces
 {
     public interface ISendEmailHandler
     {
-        void Run(SendEmailEvent sendEmailEvent);
+        Task RunAsync(SendEmailEvent sendEmailEvent);
     }
 }
