@@ -8,8 +8,7 @@ namespace EmailNotificationService.Extensions
         public static IConfigurationBuilder RegisterAppConfiguration(this IConfigurationBuilder builder)
         {
             throw new NotImplementedException();
-
-            // Add a call to populate "RateLimitTypeList" with values from an independent solution (e.g. AppConfig, API Endpoint, etc.)
+            // Would add a call to populate "RateLimitTypeList" with values from an independent solution (e.g. AppConfig, API Endpoint, etc.)
         }
     }
 }

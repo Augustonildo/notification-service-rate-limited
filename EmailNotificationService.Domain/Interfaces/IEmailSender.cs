@@ -1,7 +1,9 @@
-﻿namespace EmailNotificationService.Domain.Interfaces
+﻿using EmailNotificationService.Domain.Models;
+
+namespace EmailNotificationService.Domain.Interfaces
 {
     public interface IEmailSender
     {
-        Task SendAsync(string email, string message);
+        Task SendAsync(Notification notification);
     }
 }

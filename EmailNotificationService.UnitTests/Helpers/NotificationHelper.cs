@@ -26,9 +26,9 @@ namespace EmailNotificationService.UnitTests.Helpers
             };
         }
 
-        public static List<RateLimitConfiguration> GetRateLimitConfigurationList()
+        public static Dictionary<string, string> GetRateLimitConfigurationDictionary()
         {
-            return new List<RateLimitConfiguration>
+            var rateLimitConfigurations = new List<RateLimitConfiguration>
             {
                 new RateLimitConfiguration {
                   Type = "Status",
@@ -53,6 +53,19 @@ namespace EmailNotificationService.UnitTests.Helpers
                   HasRateLimit= false
                 }
             };
+
+            var configDictionary = new Dictionary<string, string>();
+
+            for (int index = 0; index < rateLimitConfigurations.Count; index++)
+            {
+                var config = rateLimitConfigurations[index];
+                configDictionary[$"RateLimitTypeList:{index}:Type"] = config.Type.ToString();
+                configDictionary[$"RateLimitTypeList:{index}:HasRateLimit"] = config.HasRateLimit.ToString();
+                configDictionary[$"RateLimitTypeList:{index}:TimeRangeInMinutes"] = config.TimeRangeInMinutes.ToString();
+                configDictionary[$"RateLimitTypeList:{index}:NotificationLimit"] = config.NotificationLimit.ToString();
+            }
+
+            return configDictionary;
         }
     }
 }

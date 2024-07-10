@@ -4,28 +4,22 @@ using EmailNotificationService.Domain.Models;
 using EmailNotificationService.Services;
 using EmailNotificationService.UnitTests.Helpers;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace EmailNotificationService.UnitTests.Services
 {
     public class NotificationServiceTest
     {
-        private readonly Mock<ILogger<NotificationService>> _loggerMock;
         private readonly Mock<IEmailSender> _emailSenderMock;
         private readonly Mock<IEmailSentRepository> _emailSentRepositoryMock;
         private readonly IConfiguration _configuration;
 
         public NotificationServiceTest()
         {
-            _loggerMock = new Mock<ILogger<NotificationService>>();
             _emailSenderMock = new Mock<IEmailSender>();
             _emailSentRepositoryMock = new Mock<IEmailSentRepository>();
 
-            var inMemorySettings = new Dictionary<string, string> {
-                {"RateLimitTypeList", NotificationHelper.GetRateLimitConfigurationList().ToString()!},
-            };
             _configuration = new ConfigurationBuilder()
-                .AddInMemoryCollection(inMemorySettings)
+                .AddInMemoryCollection(NotificationHelper.GetRateLimitConfigurationDictionary())
                 .Build();
         }
 
@@ -34,7 +28,7 @@ namespace EmailNotificationService.UnitTests.Services
         {
             Notification emptyNotification = new Notification();
 
-            var notificationService = new NotificationService(_loggerMock.Object, _emailSenderMock.Object, _emailSentRepositoryMock.Object, _configuration);
+            var notificationService = new NotificationService(_emailSenderMock.Object, _emailSentRepositoryMock.Object, _configuration);
 
             await Assert.ThrowsAsync<MissingEmailInformationException>(async () => await notificationService.SendAsync(emptyNotification));
         }
@@ -47,7 +41,7 @@ namespace EmailNotificationService.UnitTests.Services
                 To = "userEmail@domain.com"
             };
 
-            var notificationService = new NotificationService(_loggerMock.Object, _emailSenderMock.Object, _emailSentRepositoryMock.Object, _configuration);
+            var notificationService = new NotificationService(_emailSenderMock.Object, _emailSentRepositoryMock.Object, _configuration);
 
             await Assert.ThrowsAsync<MissingEmailInformationException>(async () => await notificationService.SendAsync(semiemptyNotification));
         }
@@ -57,7 +51,7 @@ namespace EmailNotificationService.UnitTests.Services
         {
             Notification notification = NotificationHelper.GetNotification(type: "InvalidType");
 
-            var notificationService = new NotificationService(_loggerMock.Object, _emailSenderMock.Object, _emailSentRepositoryMock.Object, _configuration);
+            var notificationService = new NotificationService(_emailSenderMock.Object, _emailSentRepositoryMock.Object, _configuration);
 
             await Assert.ThrowsAsync<UnsupportedNotificationTypeException>(async () => await notificationService.SendAsync(notification));
         }
@@ -69,25 +63,24 @@ namespace EmailNotificationService.UnitTests.Services
 
             _emailSentRepositoryMock.Setup(esr => esr.CountEmailSentInTimeRangeByTypeAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>())).ThrowsAsync(new EmailSentRepositoryException());
 
-            var notificationService = new NotificationService(_loggerMock.Object, _emailSenderMock.Object, _emailSentRepositoryMock.Object, _configuration);
+            var notificationService = new NotificationService(_emailSenderMock.Object, _emailSentRepositoryMock.Object, _configuration);
 
             await Assert.ThrowsAsync<EmailSentRepositoryException>(async () => await notificationService.SendAsync(notification));
         }
 
         [Fact]
-        public async Task SendAsync_NotificationOverRateLimit_ShouldNotSendEmailAndReturnMessageToQueue()
+        public async Task SendAsync_NotificationOverRateLimit_ShouldNotSendEmailAndThrowNotificationOverTheLimitException()
         {
             Notification notification = NotificationHelper.GetNotification();
 
-            _emailSentRepositoryMock.Setup(esr => esr.CountEmailSentInTimeRangeByTypeAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>())).ReturnsAsync(999);
+            _emailSentRepositoryMock.Setup(esr => esr.CountEmailSentInTimeRangeByTypeAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>())).ReturnsAsync(99999);
 
-            var notificationService = new NotificationService(_loggerMock.Object, _emailSenderMock.Object, _emailSentRepositoryMock.Object, _configuration);
+            var notificationService = new NotificationService(_emailSenderMock.Object, _emailSentRepositoryMock.Object, _configuration);
 
-            await notificationService.SendAsync(notification);
-
+            await Assert.ThrowsAsync<NotificationOverTheLimitException>(async () => await notificationService.SendAsync(notification));
             _emailSentRepositoryMock.Verify(esr => esr.CountEmailSentInTimeRangeByTypeAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()), Times.Once());
             _emailSentRepositoryMock.Verify(esr => esr.RegisterEmailSentAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
-            _emailSenderMock.Verify(es => es.SendAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
+            _emailSenderMock.Verify(es => es.SendAsync(It.IsAny<Notification>()), Times.Never());
         }
 
         [Fact]
@@ -97,13 +90,13 @@ namespace EmailNotificationService.UnitTests.Services
 
             _emailSentRepositoryMock.Setup(esr => esr.CountEmailSentInTimeRangeByTypeAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>())).ReturnsAsync(0);
 
-            var notificationService = new NotificationService(_loggerMock.Object, _emailSenderMock.Object, _emailSentRepositoryMock.Object, _configuration);
+            var notificationService = new NotificationService(_emailSenderMock.Object, _emailSentRepositoryMock.Object, _configuration);
 
             await notificationService.SendAsync(notification);
 
             _emailSentRepositoryMock.Verify(esr => esr.CountEmailSentInTimeRangeByTypeAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()), Times.Once());
             _emailSentRepositoryMock.Verify(esr => esr.RegisterEmailSentAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once());
-            _emailSenderMock.Verify(es => es.SendAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once());
+            _emailSenderMock.Verify(es => es.SendAsync(It.IsAny<Notification>()), Times.Once());
         }
 
         [Fact]
@@ -111,13 +104,13 @@ namespace EmailNotificationService.UnitTests.Services
         {
             Notification notification = NotificationHelper.GetNotification(type: "Security Breach");
 
-            var notificationService = new NotificationService(_loggerMock.Object, _emailSenderMock.Object, _emailSentRepositoryMock.Object, _configuration);
+            var notificationService = new NotificationService(_emailSenderMock.Object, _emailSentRepositoryMock.Object, _configuration);
 
             await notificationService.SendAsync(notification);
 
             _emailSentRepositoryMock.Verify(esr => esr.CountEmailSentInTimeRangeByTypeAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()), Times.Never());
             _emailSentRepositoryMock.Verify(esr => esr.RegisterEmailSentAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once());
-            _emailSenderMock.Verify(es => es.SendAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once());
+            _emailSenderMock.Verify(es => es.SendAsync(It.IsAny<Notification>()), Times.Once());
         }
     }
 }

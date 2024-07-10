@@ -18,12 +18,6 @@ namespace EmailNotificationService.Handlers
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         }
 
-        /// TODO: Document email handler
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="myQueueItem"></param>
-        /// <param name="log"></param>
         [FunctionName("SendEmailFunction")]
         public async Task RunAsync([ServiceBusTrigger("mail-queue", IsSessionsEnabled = true, Connection = "ServiceBusConnection")] SendEmailEvent sendEmailEvent)
         {
