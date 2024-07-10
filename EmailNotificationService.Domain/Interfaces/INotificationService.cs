@@ -1,7 +1,9 @@
-﻿namespace EmailNotificationService.Domain.Interfaces
+﻿using EmailNotificationService.Domain.Models;
+
+namespace EmailNotificationService.Domain.Interfaces
 {
     public interface INotificationService
     {
-        void Send(string type, string userId, string message);
+        void Send(Notification notification);
     }
 }

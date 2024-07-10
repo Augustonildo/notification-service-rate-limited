@@ -1,18 +1,20 @@
 using EmailNotificationService.Domain.Interfaces;
-using EmailNotificationService.Integration;
-using EmailNotificationService.Services;
+using EmailNotificationService.Domain.Models;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace EmailNotificationService.Handlers
 {
     public class SendEmailHandler : ISendEmailHandler
     {
         private readonly ILogger<SendEmailHandler> _logger;
+        private readonly INotificationService _notificationService;
 
-        public SendEmailHandler(ILogger<SendEmailHandler> logger)
+        public SendEmailHandler(ILogger<SendEmailHandler> logger, INotificationService notificationService)
         {
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         }
 
         /// TODO: Document email handler
@@ -22,17 +24,20 @@ namespace EmailNotificationService.Handlers
         /// <param name="myQueueItem"></param>
         /// <param name="log"></param>
         [FunctionName("SendEmailFunction")]
-        public void Run([ServiceBusTrigger("mail-queue", Connection = "")] string myQueueItem, ILogger log)
+        public void Run([ServiceBusTrigger("mail-queue", IsSessionsEnabled = true, Connection = "ServiceBusConnection")] SendEmailEvent sendEmailEvent)
         {
-            log.LogInformation($"C# ServiceBus queue trigger function processed message: {myQueueItem}");
+            _logger.LogInformation($"Received sendEmailEvent#{sendEmailEvent.EventId} to user {sendEmailEvent.To} with subject: {sendEmailEvent.Subject}");
 
-            INotificationService service = new NotificationService(new EmailSender());
-
-            service.Send("news", "user", "news 1");
-            service.Send("news", "user", "news 2");
-            service.Send("news", "user", "news 3");
-            service.Send("news", "another user", "news 1");
-            service.Send("update", "user", "update 1");
+            try
+            {
+                Notification notification = new Notification(sendEmailEvent);
+                _notificationService.Send(notification);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error on trying to process sendEmailEvent#{sendEmailEvent.EventId}");
+                throw;
+            }
         }
     }
 }

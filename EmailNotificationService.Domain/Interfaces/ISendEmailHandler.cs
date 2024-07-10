@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using EmailNotificationService.Domain.Models;
 
 namespace EmailNotificationService.Domain.Interfaces
 {
     public interface ISendEmailHandler
     {
-        void Run(string myQueueItem, ILogger log);
+        void Run(SendEmailEvent sendEmailEvent);
     }
 }
