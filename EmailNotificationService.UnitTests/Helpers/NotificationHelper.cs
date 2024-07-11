@@ -28,29 +28,31 @@ namespace EmailNotificationService.UnitTests.Helpers
 
         public static Dictionary<string, string> GetRateLimitConfigurationDictionary()
         {
-            var rateLimitConfigurations = new List<RateLimitConfiguration>
+            var rateLimitConfigurations = new List<EmailTypeConfiguration>
             {
-                new RateLimitConfiguration {
+                new EmailTypeConfiguration {
                   Type = "Status",
-                  HasRateLimit = true,
-                  TimeRangeInMinutes= 1,
-                  NotificationLimit= 2
+                  RateLimit = new RateLimitConfiguration {
+                      TimeRangeInMinutes= 1,
+                      NotificationLimit= 2
+                  }
                 },
-                new RateLimitConfiguration {
+                new EmailTypeConfiguration {
                   Type= "News",
-                  HasRateLimit= true,
-                  TimeRangeInMinutes= 1440,
-                  NotificationLimit= 1
+                  RateLimit = new RateLimitConfiguration {
+                      TimeRangeInMinutes= 1440,
+                      NotificationLimit= 1
+                  }
                 },
-                new RateLimitConfiguration {
+                new EmailTypeConfiguration {
                   Type= "Marketing",
-                  HasRateLimit= true,
-                  TimeRangeInMinutes= 60,
-                  NotificationLimit= 3
+                  RateLimit = new RateLimitConfiguration {
+                      TimeRangeInMinutes= 60,
+                      NotificationLimit= 3
+                  }
                 },
-                new RateLimitConfiguration {
-                  Type= "Security Breach",
-                  HasRateLimit= false
+                new EmailTypeConfiguration {
+                  Type= "Security Breach"
                 }
             };
 
@@ -59,10 +61,12 @@ namespace EmailNotificationService.UnitTests.Helpers
             for (int index = 0; index < rateLimitConfigurations.Count; index++)
             {
                 var config = rateLimitConfigurations[index];
-                configDictionary[$"RateLimitTypeList:{index}:Type"] = config.Type.ToString();
-                configDictionary[$"RateLimitTypeList:{index}:HasRateLimit"] = config.HasRateLimit.ToString();
-                configDictionary[$"RateLimitTypeList:{index}:TimeRangeInMinutes"] = config.TimeRangeInMinutes.ToString();
-                configDictionary[$"RateLimitTypeList:{index}:NotificationLimit"] = config.NotificationLimit.ToString();
+                configDictionary[$"EmailTypeList:{index}:Type"] = config.Type.ToString();
+                if (config.RateLimit != null)
+                {
+                    configDictionary[$"EmailTypeList:{index}:RateLimit:TimeRangeInMinutes"] = config.RateLimit.TimeRangeInMinutes.ToString();
+                    configDictionary[$"EmailTypeList:{index}:RateLimit:NotificationLimit"] = config.RateLimit.NotificationLimit.ToString();
+                }
             }
 
             return configDictionary;

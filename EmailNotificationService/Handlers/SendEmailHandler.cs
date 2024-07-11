@@ -18,6 +18,11 @@ namespace EmailNotificationService.Handlers
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         }
 
+        /// <summary>
+        /// This handler function consumes events from a service-bus queue and sends an e-mail if all validations pass.
+        /// </summary>
+        /// <param name="sendEmailEvent">A queue event representing 1 e-mail to be sent</param>
+        /// <returns></returns>
         [FunctionName("SendEmailFunction")]
         public async Task RunAsync([ServiceBusTrigger("mail-queue", IsSessionsEnabled = true, Connection = "ServiceBusConnection")] SendEmailEvent sendEmailEvent)
         {
